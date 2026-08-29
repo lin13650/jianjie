@@ -24,13 +24,19 @@
   --shadow:0 18px 50px -28px rgba(20,28,48,.35);
   --shadow-2:0 8px 22px -12px rgba(20,28,48,.25);
   --radius:18px;
+  /* 全局层级体系：统一用变量管理 z-index，避免魔法数字、保证各内容区空间关系清晰 */
+  --z-bg:0;      /* 底层·流体扭曲画布 */
+  --z-content:1; /* 内容层·各 section */
+  --z-fab:70;    /* 悬浮层·返回顶部 */
+  --z-header:80; /* 悬浮层·顶部导航 */
+  --z-toast:100; /* 顶层·消息提示 */
   --serif:"Iowan Old Style","Palatino Linotype","Georgia",serif;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
   --mono:"JetBrains Mono","SFMono-Regular",Consolas,monospace;
-  --scene-1:linear-gradient(135deg,#fbfaf6 0%,#eef0f4 100%);
-  --scene-2:linear-gradient(135deg,#eef3fb 0%,#e9eef7 100%);
-  --scene-3:linear-gradient(135deg,#f0f5f0 0%,#e8efe7 100%);
-  --scene-4:linear-gradient(135deg,#f6eef0 0%,#f1e9ec 100%);
+  --scene-1:linear-gradient(135deg,color-mix(in srgb,#fbfaf6 52%,transparent) 0%,color-mix(in srgb,#e6eaf2 42%,transparent) 100%);
+  --scene-2:linear-gradient(135deg,color-mix(in srgb,#eef3fb 52%,transparent) 0%,color-mix(in srgb,#e2eaf6 42%,transparent) 100%);
+  --scene-3:linear-gradient(135deg,color-mix(in srgb,#f0f5f0 52%,transparent) 0%,color-mix(in srgb,#e3ece2 42%,transparent) 100%);
+  --scene-4:linear-gradient(135deg,color-mix(in srgb,#f6eef0 52%,transparent) 0%,color-mix(in srgb,#efe3e7 42%,transparent) 100%);
   /* WebGL 流体层：浅色 */
   --fl-bg-a:#eef2f7;
   --fl-bg-b:#f7f5ee;
@@ -52,10 +58,10 @@
   --accent-3:#3ed3be;
   --shadow:0 18px 50px -20px rgba(0,0,0,.6);
   --shadow-2:0 8px 22px -12px rgba(0,0,0,.5);
-  --scene-1:linear-gradient(135deg,#1a1d28 0%,#181a24 100%);
-  --scene-2:linear-gradient(135deg,#161a26 0%,#1b1f2e 100%);
-  --scene-3:linear-gradient(135deg,#161d1c 0%,#1a2322 100%);
-  --scene-4:linear-gradient(135deg,#221a1f 0%,#241c22 100%);
+  --scene-1:linear-gradient(135deg,color-mix(in srgb,#1a1d28 58%,transparent) 0%,color-mix(in srgb,#141620 50%,transparent) 100%);
+  --scene-2:linear-gradient(135deg,color-mix(in srgb,#161a26 58%,transparent) 0%,color-mix(in srgb,#161924 50%,transparent) 100%);
+  --scene-3:linear-gradient(135deg,color-mix(in srgb,#161d1c 58%,transparent) 0%,color-mix(in srgb,#141b1a 50%,transparent) 100%);
+  --scene-4:linear-gradient(135deg,color-mix(in srgb,#221a1f 58%,transparent) 0%,color-mix(in srgb,#1e171b 50%,transparent) 100%);
   /* WebGL 流体层：深色 */
   --fl-bg-a:#161a26;
   --fl-bg-b:#0b0e14;
@@ -65,14 +71,15 @@
 }
 
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;text-size-adjust:100%}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg)}
 /* 流式字号：桌面 16px → 手机 14px；保证正文 ≥14px（用户硬性指标） */
 html{font-size:clamp(14px, 0.85vw + 12px, 16px)}
 html,body{margin:0;padding:0}
 body{
   font-family:var(--sans);
   color:var(--ink);
-  background:var(--bg);
+  /* 页面底色完全透明：底层视觉由 WebGL 流体画布承担；html 保留 var(--bg) 作为关闭 WebGL 时的兜底 */
+  background:transparent;
   line-height:1.65;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
@@ -88,10 +95,10 @@ button{font-family:inherit}
 
 /* ============ WebGL 流体扭曲背景 ============ */
 #fluid-canvas{
-  position:fixed;inset:0;z-index:0;pointer-events:none;display:block;width:100vw;height:100vh;
+  position:fixed;inset:0;z-index:var(--z-bg);pointer-events:none;display:block;width:100vw;height:100vh;
 }
 /* 主内容叠在流体层上；卡片轻微玻璃拟态透出流体 */
-main{position:relative;z-index:1}
+main{position:relative;z-index:var(--z-content)}
 .home-card, .c3d-card, .snap-item{
   backdrop-filter:blur(6px) saturate(1.05);
   -webkit-backdrop-filter:blur(6px) saturate(1.05);
@@ -99,7 +106,7 @@ main{position:relative;z-index:1}
 
 /* ============ 顶部导航 ============ */
 .topbar{
-  position:fixed;top:0;left:0;right:0;z-index:80;
+  position:fixed;top:0;left:0;right:0;z-index:var(--z-header);
   display:flex;align-items:center;justify-content:space-between;
   padding:14px clamp(16px,4vw,48px);
   background:color-mix(in srgb,var(--bg) 80%,transparent);
@@ -110,20 +117,20 @@ main{position:relative;z-index:1}
 .brand-dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
 .brand small{color:var(--ink-mute);font-weight:500;font-size:12px}
 
-.nav-tabs{display:flex;align-items:center;gap:4px;background:var(--bg-soft);border:1px solid var(--line);border-radius:999px;padding:4px}
+.nav-tabs{display:flex;align-items:center;gap:4px;background:color-mix(in srgb,var(--bg-soft) 55%,transparent);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:999px;padding:4px}
 .nav-tab{
   appearance:none;border:0;background:transparent;color:var(--ink-soft);
   padding:8px 16px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:600;
   transition:all .25s ease;
 }
-.nav-tab[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:var(--shadow-2)}
+.nav-tab[aria-selected="true"]{background:color-mix(in srgb,var(--card) 78%,transparent);color:var(--ink);box-shadow:var(--shadow-2)}
 .nav-tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 .tools{display:flex;align-items:center;gap:8px}
 .tool-btn{
-  appearance:none;border:1px solid var(--line);background:var(--card);
-  color:var(--ink-soft);width:36px;height:36px;border-radius:50%;
-  display:grid;place-items:center;cursor:pointer;transition:all .2s ease;
+  appearance:none;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 66%,transparent);
+  backdrop-filter:blur(8px);color:var(--ink-soft);width:36px;height:36px;border-radius:50%;
+  display:grid;place-items:center;cursor:pointer;transition:all .22s ease;
 }
 .tool-btn:hover{color:var(--ink);border-color:var(--accent);transform:translateY(-1px)}
 .tool-btn svg{width:18px;height:18px}
@@ -133,7 +140,9 @@ main{padding-top:64px}
 .page{min-height:100vh;min-height:100dvh;padding:80px clamp(16px,5vw,80px);position:relative}
 .page-head{max-width:1100px;margin:0 auto 48px;display:flex;flex-direction:column;gap:6px}
 .page-eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:700}
-.page-title{font-family:var(--serif);font-size:clamp(32px,4.5vw,56px);font-weight:700;letter-spacing:-.5px;margin:0}
+.page-title{font-family:var(--serif);font-size:clamp(32px,4.5vw,56px);font-weight:700;letter-spacing:-.5px;margin:0;line-height:1.12;
+  background:linear-gradient(120deg,var(--ink) 20%,color-mix(in srgb,var(--accent) 72%,var(--ink)) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 .page-sub{color:var(--ink-mute);font-size:15px;max-width:60ch}
 
 /* ============ 首页 ============ */
@@ -141,12 +150,12 @@ main{padding-top:64px}
   display:flex;align-items:center;justify-content:center;
   background:
     radial-gradient(1200px 600px at 80% -10%, color-mix(in srgb,var(--accent) 10%,transparent), transparent 60%),
-    radial-gradient(900px 500px at 0% 110%, color-mix(in srgb,var(--accent-3) 10%,transparent), transparent 60%),
-    var(--bg);
+    radial-gradient(900px 500px at 0% 110%, color-mix(in srgb,var(--accent-3) 10%,transparent), transparent 60%);
 }
 .home-card{
   width:min(960px,100%);
-  background:var(--card);border:1px solid var(--line);border-radius:24px;
+  /* 玻璃拟态：半透明底 + blur，让首页流体扭曲透出卡片四周 */
+  background:color-mix(in srgb,var(--card) 74%,transparent);border:1px solid var(--line);border-radius:24px;
   box-shadow:var(--shadow);padding:48px;position:relative;overflow:hidden;
 }
 .home-card::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 6%,transparent),transparent 40%);pointer-events:none}
@@ -159,11 +168,13 @@ main{padding-top:64px}
   position:relative;overflow:hidden;
 }
 .avatar svg{position:absolute;inset:0;width:100%;height:100%;opacity:.18}
-.home-name{font-family:var(--serif);font-size:clamp(28px,4vw,42px);font-weight:700;letter-spacing:-.5px;margin:0 0 4px}
+.home-name{font-family:var(--serif);font-size:clamp(28px,4vw,42px);font-weight:700;letter-spacing:-.5px;margin:0 0 4px;
+  background:linear-gradient(120deg,var(--ink) 15%,color-mix(in srgb,var(--accent) 68%,var(--ink)) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 .home-title{color:var(--accent);font-weight:600;letter-spacing:.3px;margin-bottom:14px}
 .home-bio{color:var(--ink-soft);max-width:60ch}
 .home-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
-.tag{font-size:12px;padding:4px 10px;border-radius:999px;background:var(--bg-soft);border:1px solid var(--line);color:var(--ink-soft)}
+.tag{font-size:12px;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--bg-soft) 55%,transparent);border:1px solid var(--line);color:var(--ink-soft);backdrop-filter:blur(6px)}
 
 .home-contacts{
   display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
@@ -171,7 +182,7 @@ main{padding-top:64px}
 }
 .contact{display:flex;align-items:center;gap:12px}
 .contact-ico{
-  width:38px;height:38px;border-radius:10px;background:var(--bg-soft);
+  width:38px;height:38px;border-radius:10px;background:color-mix(in srgb,var(--bg-soft) 60%,transparent);
   display:grid;place-items:center;color:var(--accent);flex-shrink:0;
 }
 .contact-ico svg{width:18px;height:18px}
@@ -195,9 +206,11 @@ main{padding-top:64px}
   --scene:var(--scene-1);
   background:var(--scene);
   border-radius:24px;border:1px solid var(--line);
-  transition:background .8s ease;
+  transition:background .8s ease,transform .55s cubic-bezier(.3,.7,.4,1);
   overflow:hidden;
 }
+/* 场景切换瞬间：画面区域放大至全屏的扩展脉冲 */
+.carousel.pulse{transform:scale(1.035)}
 .carousel::after{
   content:"";position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(800px 400px at 50% 0%,color-mix(in srgb,#fff 8%,transparent),transparent 60%);
@@ -213,19 +226,28 @@ main{padding-top:64px}
 }
 .c3d-card{
   position:absolute;inset:0;border-radius:20px;overflow:hidden;
-  background:var(--card);border:1px solid var(--line);
+  background:color-mix(in srgb,var(--card) 80%,transparent);border:1px solid var(--line);
   box-shadow:var(--shadow);
-  transform:rotateY(calc(var(--i) * var(--angle,90deg))) translateZ(var(--radius,420px));
+  /* scale(--s)：激活卡向外扩展（全屏扩展转场），非激活卡缩小退后形成叠层 */
+  transform:rotateY(calc(var(--i) * var(--angle,90deg))) translateZ(var(--radius,420px)) scale(var(--s,1));
   backface-visibility:hidden;
   display:flex;flex-direction:column;
-  transition:opacity .6s ease,filter .6s ease;
+  transition:opacity .6s ease,filter .6s ease,transform .85s cubic-bezier(.22,.61,.36,1);
 }
 .c3d-card .card-media{
   height:140px;flex-shrink:0;position:relative;overflow:hidden;
-  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 30%,transparent),color-mix(in srgb,var(--accent-2) 25%,transparent));
+  /* 背景融合：柔和双色渐变 + 顶部径向光晕，让图标视觉融入卡片场景 */
+  background:
+    radial-gradient(120% 130% at 50% -10%, color-mix(in srgb,var(--accent-2) 40%,transparent), transparent 62%),
+    linear-gradient(135deg,color-mix(in srgb,var(--accent) 42%,transparent),color-mix(in srgb,var(--accent-2) 34%,transparent));
   display:grid;place-items:center;color:#fff;
 }
-.c3d-card .card-media svg{width:54px;height:54px;opacity:.85}
+/* 底部淡出到卡片底色，形成图片→卡片内容区的自然过渡（背景图扩展融合） */
+.c3d-card .card-media::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,transparent 30%,color-mix(in srgb,var(--card) 55%,transparent) 100%);
+}
+.c3d-card .card-media svg{width:54px;height:54px;opacity:.9;filter:drop-shadow(0 6px 18px rgba(0,0,0,.25))}
 .c3d-card .card-body{padding:22px;flex:1;display:flex;flex-direction:column;gap:8px;overflow:auto}
 .c3d-card .card-eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-weight:700}
 .c3d-card .card-title{font-family:var(--serif);font-size:22px;font-weight:700;line-height:1.25;margin:0}
@@ -234,11 +256,13 @@ main{padding-top:64px}
 .c3d-card .card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:10px}
 .c3d-card .card-tags .tag{font-size:11px}
 
-/* 当前激活卡片：扩展到全屏（满屏扩展转场） */
+/* 当前激活卡片：向外扩展放大（滚动驱动的全屏扩展转场） */
 .c3d-card.is-active{
-  z-index:5;
+  z-index:5;--s:1.12;
+  box-shadow:0 30px 70px -25px rgba(20,28,48,.5);
 }
-.stage .c3d-card:not(.is-active){filter:brightness(.96) saturate(.85)}
+/* 非激活卡：缩小退后，形成滚动叠层转场的前后层叠 */
+.stage .c3d-card:not(.is-active){--s:.93;filter:brightness(.96) saturate(.85)}
 
 /* 逐字错峰入场 */
 .stagger span{display:inline-block;opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s cubic-bezier(.22,.61,.36,1)}
@@ -285,7 +309,7 @@ main{padding-top:64px}
 .snap-rail::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
 .snap-item{
   flex:0 0 240px;scroll-snap-align:center;
-  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;
+  background:color-mix(in srgb,var(--card) 72%,transparent);border:1px solid var(--line);border-radius:14px;padding:14px;
   cursor:pointer;transition:all .25s ease;
 }
 .snap-item[aria-current="true"]{border-color:var(--accent);box-shadow:var(--shadow-2);transform:translateY(-2px)}
@@ -310,9 +334,9 @@ main{padding-top:64px}
 
 /* ============ 返回顶部 ============ */
 .back-top{
-  position:fixed;right:24px;bottom:24px;z-index:70;
+  position:fixed;right:24px;bottom:24px;z-index:var(--z-fab);
   width:46px;height:46px;border-radius:50%;border:1px solid var(--line);
-  background:var(--card);color:var(--ink);cursor:pointer;
+  background:color-mix(in srgb,var(--card) 78%,transparent);backdrop-filter:blur(8px);color:var(--ink);cursor:pointer;
   display:grid;place-items:center;box-shadow:var(--shadow-2);
   opacity:0;pointer-events:none;transform:translateY(12px);transition:all .3s ease;
 }
@@ -324,7 +348,7 @@ main{padding-top:64px}
 .toast{
   position:fixed;left:50%;bottom:32px;transform:translate(-50%,20px);
   background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;
-  font-size:13px;font-weight:600;box-shadow:var(--shadow);z-index:90;
+  font-size:13px;font-weight:600;box-shadow:var(--shadow);z-index:var(--z-toast);
   opacity:0;pointer-events:none;transition:all .3s ease;
 }
 .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -478,6 +502,17 @@ main{padding-top:64px}
   #fluid-canvas{display:none !important} /* 省电模式下关闭流体 WebGL */
 }
 
+/* ============ 桌面端精细交互反馈（有 hover 且 pointer:fine）============ */
+@media (hover:hover) and (pointer:fine){
+  .snap-item:hover{transform:translateY(-3px);box-shadow:var(--shadow-2)}
+  .tag:hover{border-color:var(--accent);color:var(--accent)}
+  .contact:hover .contact-ico{color:var(--accent-2);transform:translateY(-1px)}
+  .contact-ico{transition:color .25s ease,transform .25s ease}
+  .nav-tab:hover{color:var(--ink)}
+  .c3d-card .card-media svg{transition:transform .5s cubic-bezier(.22,.61,.36,1)}
+  .c3d-card.is-active .card-media svg{transform:scale(1.1)}
+}
+
 /* ============ 更清晰的触摸/点击反馈（移动端点击态）============ */
 @media (hover: none) and (pointer: coarse) {
   .nav-tab, .tab, .tool-btn, .carousel-nav, .back-top, .copy-btn, .snap-item{
@@ -507,6 +542,9 @@ main{padding-top:64px}
   .c3d-card .card-media{height:60px}
   .c3d-card .stagger span{opacity:1 !important;transform:none !important}
   .home-card,.c3d-card{box-shadow:none;border:1px solid #ccc}
+  /* 修复渐变文字在打印时因 text-fill 透明而不可见的问题 */
+  .page-title,.home-name{background:none !important;-webkit-background-clip:unset !important;background-clip:unset !important;-webkit-text-fill-color:#000 !important}
+  .c3d-card,.home-card,.snap-item{background:#fff !important}
   .avatar{break-inside:avoid}
   .tabs{display:none}
   .tab-panel{display:block !important}
@@ -936,6 +974,12 @@ function rotateStage(key,idx,silent=false){
   if(!stage||!carousel) return;
   const angle = -(360/st.n)*st.i;
   stage.style.setProperty("--rot", angle+"deg");
+  // 场景切换脉冲：画面放大至全屏的扩展感（silent 初始化/语言重渲染时不触发）
+  if(!silent){
+    carousel.classList.add("pulse");
+    clearTimeout(carousel._pulseT);
+    carousel._pulseT = setTimeout(()=>carousel.classList.remove("pulse"), 420);
+  }
   // 场景切换：背景随当前卡片变化
   carousel.dataset.scene = String(st.i+1);
   carousel.style.setProperty("--scene", `var(--scene-${(st.i%4)+1})`);
